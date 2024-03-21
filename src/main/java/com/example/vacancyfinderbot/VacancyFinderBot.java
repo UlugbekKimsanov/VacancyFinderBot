@@ -223,7 +223,7 @@ public class VacancyFinderBot extends TelegramLongPollingBot {
         in.close();
         String result = getTextUrl(response.toString());
         System.out.println(result);
-        return result != null && result.contains(user.getKalitSoz()) &&
+        return result != null && result.contains(user.getKalitSoz()+" ") &&
                 !result.contains("resume") && !result.contains("rezyume") &&
                 !result.contains("Ish joyi kerak");
     }
