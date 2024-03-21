@@ -199,11 +199,6 @@ public class VacancyFinderBot extends TelegramLongPollingBot {
         }
 
     }
-    //    https://t.me/top_jobuz/3670
-//    https://t.me/top_jobuz/3668
-//    https://t.me/UstozShogird/32038
-//    https://t.me/UstozShogird/32057
-//    https://t.me/UstozShogird/32428
     @SneakyThrows
     private boolean isTrueVacancy(UserEntity user, String postUrl) {
         URL url = new URL(postUrl);
