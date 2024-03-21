@@ -245,4 +245,5 @@ public class VacancyFinderBot extends TelegramLongPollingBot {
         System.out.println(false);
 
     }
+
 }
