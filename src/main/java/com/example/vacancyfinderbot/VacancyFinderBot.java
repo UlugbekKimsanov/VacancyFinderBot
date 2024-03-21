@@ -197,7 +197,6 @@ public class VacancyFinderBot extends TelegramLongPollingBot {
                 }
             }
         }
-
     }
     @SneakyThrows
     private boolean isTrueVacancy(UserEntity user, String postUrl) {
