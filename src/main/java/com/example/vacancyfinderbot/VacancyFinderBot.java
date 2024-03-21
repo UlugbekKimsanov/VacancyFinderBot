@@ -141,7 +141,19 @@ public class VacancyFinderBot extends TelegramLongPollingBot {
     }
     @SneakyThrows
     private boolean checkUrl(String postLink) {
-        return !Jsoup.parse(postLink).select("meta[property=og:description]").isEmpty();
+        URL url = new URL(postLink);
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        conn.setRequestMethod("GET");
+
+        BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+        StringBuilder response = new StringBuilder();
+        String inputLine;
+
+        while ((inputLine = in.readLine()) != null) {
+            response.append(inputLine);
+        }
+        String result = getTextUrl(response.toString());
+        return result!=null;
     }
     @SneakyThrows
     private void showChannels(Long userId) {
@@ -177,9 +189,6 @@ public class VacancyFinderBot extends TelegramLongPollingBot {
                 int lastPostId = Integer.parseInt(parts[4]);
                 String newUrl;
                 int j = 1;
-//                https://t.me/UstozShogird/32428
-//                https://t.me/UstozShogird/32014
-
                 while (true) {
                     newUrl = baseUrl + (lastPostId + j++);
                     System.out.println("newUrl = " + newUrl);
@@ -233,17 +242,6 @@ public class VacancyFinderBot extends TelegramLongPollingBot {
     @Override
     public String getBotToken(){
         return config.getToken();
-    }
-    public static void main(String[] args) {
-        String postUrl = "https://t.me/top_jobuz/3660";
-        Document doc = Jsoup.parse(postUrl);
-        Elements metaTags = doc.select("meta[property=og:description]");
-        if (!metaTags.isEmpty()) {
-            String content = metaTags.first().attr("content");
-            System.out.println("content = " + content);
-        }
-        System.out.println(false);
-
     }
 
 }
