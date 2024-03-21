@@ -153,7 +153,7 @@ public class VacancyFinderBot extends TelegramLongPollingBot {
             response.append(inputLine);
         }
         String result = getTextUrl(response.toString());
-        return result!=null;
+        return !Objects.equals(result, "");
     }
     @SneakyThrows
     private void showChannels(Long userId) {
