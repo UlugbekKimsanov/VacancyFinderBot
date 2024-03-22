@@ -30,12 +30,13 @@ public class UserService {
         return channelRepository.findAllByUserEntity_UserId(userId);
     }
 
-    public void addChannel(UserEntity user,String postLink) {
+    public void addChannel(UserEntity user,String postLink,String defResponse) {
         Channel channel = new Channel();
         String[] parts = postLink.split("/");
         channel.setName(parts[3]);
         channel.setLastPost(postLink);
         channel.setUserEntity(user);
+        channel.setDefResponse(defResponse);
         channelRepository.save(channel);
 
     }
