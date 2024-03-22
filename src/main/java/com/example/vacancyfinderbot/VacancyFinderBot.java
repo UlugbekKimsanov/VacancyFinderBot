@@ -35,6 +35,8 @@ import java.util.Objects;
 public class VacancyFinderBot extends TelegramLongPollingBot {
     private final BotConfig config;
     private final UserService userService;
+    private String postLink;
+
     @SneakyThrows
     @Override
     public void onUpdateReceived(Update update) {
@@ -115,7 +117,8 @@ public class VacancyFinderBot extends TelegramLongPollingBot {
         SendMessage sendMessage = new SendMessage();
         sendMessage.setChatId(user.getUserId());
         if (checkUrl(postLink) && checkDuplicate(postLink,user)){
-            userService.addChannel(user,postLink);
+            String defResponse = getTextUrl(postLink+"1");
+            userService.addChannel(user,postLink,defResponse);
             sendMessage.setText("Kanal qo'shildi!");
             execute(sendMessage);
         }else {
@@ -141,6 +144,7 @@ public class VacancyFinderBot extends TelegramLongPollingBot {
     }
     @SneakyThrows
     private boolean checkUrl(String postLink) {
+        this.postLink = postLink;
         URL url = new URL(postLink);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         conn.setRequestMethod("GET");
@@ -148,12 +152,25 @@ public class VacancyFinderBot extends TelegramLongPollingBot {
         BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
         StringBuilder response = new StringBuilder();
         String inputLine;
-
         while ((inputLine = in.readLine()) != null) {
             response.append(inputLine);
         }
         String result = getTextUrl(response.toString());
-        return result!=null;
+        return !Objects.equals(result, null);
+    }
+    @SneakyThrows
+    private String checkUrl2(String postLink) {
+        URL url = new URL(postLink);
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        conn.setRequestMethod("GET");
+
+        BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+        StringBuilder response = new StringBuilder();
+        String inputLine;
+        while ((inputLine = in.readLine()) != null) {
+            response.append(inputLine);
+        }
+        return getTextUrl(response.toString());
     }
     @SneakyThrows
     private void showChannels(Long userId) {
@@ -192,7 +209,7 @@ public class VacancyFinderBot extends TelegramLongPollingBot {
                 while (true) {
                     newUrl = baseUrl + (lastPostId + j++);
                     System.out.println("newUrl = " + newUrl);
-                    if (!checkUrl(newUrl)) {
+                    if (Objects.equals(checkUrl2(newUrl),userChannel.getDefResponse())) {
                         break;
                     }else if(isTrueVacancy(user, newUrl)){
                         Vacancy vacancy = new Vacancy(newUrl, user);

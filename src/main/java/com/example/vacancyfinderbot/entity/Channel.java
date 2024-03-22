@@ -17,4 +17,5 @@ public class Channel {
     @ManyToOne
     @JoinColumn(name = "userId")
     private UserEntity userEntity;
+    private String defResponse;
 }
