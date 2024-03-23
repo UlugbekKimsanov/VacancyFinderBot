@@ -249,7 +249,7 @@ public class VacancyFinderBot extends TelegramLongPollingBot {
         }
         in.close();
         String text = cutText(response.toString());
-        String result = text != null ? text.toLowerCase() : null;
+        String result = (text != null) ? text.toLowerCase() : null;
         System.out.println("result = " + result);
         return result != null && (result.contains(user.getKalitSoz()+",") || result.contains(user.getKalitSoz()+" ")) &&
                 !result.contains("resume") && !result.contains("rezyume") &&
