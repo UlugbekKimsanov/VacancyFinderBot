@@ -24,6 +24,7 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.Keyboard
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -35,8 +36,6 @@ import java.util.Objects;
 public class VacancyFinderBot extends TelegramLongPollingBot {
     private final BotConfig config;
     private final UserService userService;
-    private String postLink;
-
     @SneakyThrows
     @Override
     public void onUpdateReceived(Update update) {
@@ -71,12 +70,13 @@ public class VacancyFinderBot extends TelegramLongPollingBot {
                         String userDetails = "";
                         userDetails += "Name: " + userEntity.getName()
                                 + "\n Kalit so'z: " +userEntity.getKalitSoz()
-                                + "\n Vakansiyalar: " + userService.getUserVacancies(userEntity).size();
+                                + "\n Vakansiyalar: " + userService.getUserVacancies(userEntity).size()
+                                + "\n Kanallar: " + userService.getUserChannels(userId).size();
                         sendMessage.setText(userDetails);
                         execute(sendMessage);
                     }
                     case "/start" -> {
-                        sendMessage.setText("Assalomu alaykum" + message.getChat().getFirstName() + " qayta tashrifingizdan xursandmiz!");
+                        sendMessage.setText("Assalomu alaykum " + message.getChat().getFirstName() + " qayta tashrifingizdan xursandmiz!");
                         sendMessage.setReplyMarkup(getReplyMarkup());
                         execute(sendMessage);}
                     default ->{
@@ -93,84 +93,6 @@ public class VacancyFinderBot extends TelegramLongPollingBot {
                 }
             }
         }
-    }
-    private ReplyKeyboard getReplyMarkup() {
-        ReplyKeyboardMarkup keyboardMarkup = new ReplyKeyboardMarkup();
-        KeyboardRow  keyboardRow = new KeyboardRow();
-        List<KeyboardRow> keyboardRows = new ArrayList<>();
-        keyboardRow.add("Kanallarim");
-        keyboardRow.add("Kanal qo'shish");
-        keyboardRows.add(keyboardRow);
-        keyboardRow =  new KeyboardRow();
-        keyboardRow.add("Kalit so'z");
-        keyboardRows.add(keyboardRow);
-        keyboardRow.add("Mening profilim");
-        keyboardMarkup.setKeyboard(keyboardRows);
-        keyboardMarkup.setResizeKeyboard(true);
-        return keyboardMarkup;
-
-    }
-    @SneakyThrows
-    private void addChannel(UserEntity user, String postLink) {
-        user.setState(State.Default);
-        userService.addUser(user);
-        SendMessage sendMessage = new SendMessage();
-        sendMessage.setChatId(user.getUserId());
-        if (checkUrl(postLink) && checkDuplicate(postLink,user)){
-            String defResponse = getTextUrl(postLink+"1");
-            userService.addChannel(user,postLink,defResponse);
-            sendMessage.setText("Kanal qo'shildi!");
-            execute(sendMessage);
-        }else {
-            sendMessage.setText("Post linki yaroqsiz");
-            execute(sendMessage);
-        }
-
-    }
-    @SneakyThrows
-    private boolean checkDuplicate(String postLink, UserEntity user) {
-        List<Channel> userChannels = userService.getUserChannels(user.getUserId());
-        String[] parts = postLink.split("/");
-        String channelName = parts[3];
-        SendMessage sendMessage = new SendMessage();
-        sendMessage.setChatId(user.getUserId());
-        for (Channel userChannel : userChannels) {
-            if(Objects.equals(channelName, userChannel.getName())){
-                sendMessage.setText("Ushbu kanal allaqachon qo'shilgan!");
-                execute(sendMessage);
-                return false;
-            }
-        }return true;
-    }
-    @SneakyThrows
-    private boolean checkUrl(String postLink) {
-        this.postLink = postLink;
-        URL url = new URL(postLink);
-        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-        conn.setRequestMethod("GET");
-
-        BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-        StringBuilder response = new StringBuilder();
-        String inputLine;
-        while ((inputLine = in.readLine()) != null) {
-            response.append(inputLine);
-        }
-        String result = getTextUrl(response.toString());
-        return !Objects.equals(result, null);
-    }
-    @SneakyThrows
-    private String checkUrl2(String postLink) {
-        URL url = new URL(postLink);
-        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-        conn.setRequestMethod("GET");
-
-        BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-        StringBuilder response = new StringBuilder();
-        String inputLine;
-        while ((inputLine = in.readLine()) != null) {
-            response.append(inputLine);
-        }
-        return getTextUrl(response.toString());
     }
     @SneakyThrows
     private void showChannels(Long userId) {
@@ -190,6 +112,91 @@ public class VacancyFinderBot extends TelegramLongPollingBot {
         }
     }
     @SneakyThrows
+    private void addChannel(UserEntity user, String postLink) {
+        user.setState(State.Default);
+        userService.addUser(user);
+        SendMessage sendMessage = new SendMessage();
+        sendMessage.setChatId(user.getUserId());
+        boolean checkDuplicate = checkDuplicate(postLink, user);
+        if (checkUrl(postLink) && !checkDuplicate){
+            String defResponse = getDefData(postLink+"1");
+            System.out.println("defResponse = " + defResponse);
+            userService.addChannel(user,postLink,defResponse);
+            sendMessage.setText("Kanal qo'shildi!");
+            execute(sendMessage);
+        }else if(!checkDuplicate){
+            sendMessage.setText("Post linki yaroqsiz");
+            execute(sendMessage);
+        }
+
+    }
+
+    @SneakyThrows
+    private String getDefData(String postUrl) {
+        URL url = new URL(postUrl);
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        conn.setRequestMethod("GET");
+
+        BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+        StringBuilder response = new StringBuilder();
+        String inputLine;
+
+        while ((inputLine = in.readLine()) != null) {
+            response.append(inputLine);
+        }
+        in.close();
+        return cutText(response.toString());
+    }
+
+    @SneakyThrows
+    private boolean checkDuplicate(String postLink, UserEntity user) {
+        List<Channel> userChannels = userService.getUserChannels(user.getUserId());
+        String[] parts = postLink.split("/");
+        if(parts.length >= 3){
+            String channelName = parts[3];
+            SendMessage sendMessage = new SendMessage();
+            sendMessage.setChatId(user.getUserId());
+            for (Channel userChannel : userChannels) {
+                if(Objects.equals(channelName, userChannel.getName())){
+                    sendMessage.setText("Ushbu kanal allaqachon qo'shilgan!");
+                    execute(sendMessage);
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+    
+    @SneakyThrows
+    private boolean checkUrl(String postLink) {
+        URL url = null;
+        try {
+            url = new URL(postLink);
+        } catch (MalformedURLException e) {
+            return false;
+        }
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        conn.setRequestMethod("GET");
+        return conn.getResponseCode() == 200;
+    }
+    private ReplyKeyboard getReplyMarkup() {
+        ReplyKeyboardMarkup keyboardMarkup = new ReplyKeyboardMarkup();
+        KeyboardRow  keyboardRow = new KeyboardRow();
+        List<KeyboardRow> keyboardRows = new ArrayList<>();
+        keyboardRow.add("Kanallarim");
+        keyboardRow.add("Kanal qo'shish");
+        keyboardRows.add(keyboardRow);
+        keyboardRow =  new KeyboardRow();
+        keyboardRow.add("Kalit so'z");
+        keyboardRows.add(keyboardRow);
+        keyboardRow.add("Mening profilim");
+        keyboardMarkup.setKeyboard(keyboardRows);
+        keyboardMarkup.setResizeKeyboard(true);
+        return keyboardMarkup;
+
+    }
+
+    @SneakyThrows
     @Scheduled(fixedRate = 600_000)
     public void checkVacancy() {
         System.out.println("Scheduled ishladi!");
@@ -197,7 +204,7 @@ public class VacancyFinderBot extends TelegramLongPollingBot {
         List<UserEntity> userEntities = userService.getAllUser();
         for (UserEntity user : userEntities) {
             List<Channel> userChannels = userService.getUserChannels(user.getUserId());
-            System.out.println("user.getName() = " + user.getName());
+            System.out.println("\nuser.getName() = " + user.getName());
             for (Channel userChannel : userChannels) {
                 System.out.println("userChannel = " + userChannel.getName());
                 String lastPost = userChannel.getLastPost();
@@ -208,8 +215,11 @@ public class VacancyFinderBot extends TelegramLongPollingBot {
                 int j = 1;
                 while (true) {
                     newUrl = baseUrl + (lastPostId + j++);
-                    System.out.println("newUrl = " + newUrl);
-                    if (Objects.equals(checkUrl2(newUrl),userChannel.getDefResponse())) {
+                    System.out.println("\nnewUrl = " + newUrl);
+                    if (Objects.equals(getDefData(newUrl),userChannel.getDefResponse())) {
+                        System.out.println("Checked to last post");
+                        userChannel.setLastPost(baseUrl+ (lastPostId+j-2));
+                        userService.updateChannel(userChannel);
                         break;
                     }else if(isTrueVacancy(user, newUrl)){
                         Vacancy vacancy = new Vacancy(newUrl, user);
@@ -238,13 +248,13 @@ public class VacancyFinderBot extends TelegramLongPollingBot {
             response.append(inputLine);
         }
         in.close();
-        String result = getTextUrl(response.toString());
-        System.out.println(result);
-        return result != null && result.contains(user.getKalitSoz()+" ") &&
+        String result = cutText(response.toString());
+        System.out.println("result = " + result);
+        return result != null && (result.contains(user.getKalitSoz()+",") || result.contains(user.getKalitSoz()+" ")) &&
                 !result.contains("resume") && !result.contains("rezyume") &&
                 !result.contains("Ish joyi kerak");
     }
-    private String getTextUrl(String postUrl) {
+    private String cutText(String postUrl) {
         Document doc = Jsoup.parse(postUrl);
         Elements metaTags = doc.select("meta[property=og:description]");
         if (!metaTags.isEmpty()) {
@@ -252,6 +262,7 @@ public class VacancyFinderBot extends TelegramLongPollingBot {
         }
         return null;
     }
+
     @Override
     public String getBotUsername() {
         return config.getBotName();
