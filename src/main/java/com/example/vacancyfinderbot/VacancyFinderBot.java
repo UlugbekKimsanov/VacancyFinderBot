@@ -113,13 +113,11 @@ public class VacancyFinderBot extends TelegramLongPollingBot {
     }
     @SneakyThrows
     private void addChannel(UserEntity user, String postLink) {
-        user.setState(State.Default);
-        userService.addUser(user);
         SendMessage sendMessage = new SendMessage();
         sendMessage.setChatId(user.getUserId());
         boolean checkDuplicate = checkDuplicate(postLink, user);
         if (checkUrl(postLink) && !checkDuplicate){
-            String defResponse = getDefData(postLink+"1");
+            String defResponse = getDefData(postLink+"100");
             System.out.println("defResponse = " + defResponse);
             userService.addChannel(user,postLink,defResponse);
             sendMessage.setText("Kanal qo'shildi!");
@@ -253,7 +251,7 @@ public class VacancyFinderBot extends TelegramLongPollingBot {
         System.out.println("result = " + result);
         return result != null && (result.contains(user.getKalitSoz()+",") || result.contains(user.getKalitSoz()+" ")) &&
                 !result.contains("resume") && !result.contains("rezyume") &&
-                !result.contains("Ish joyi kerak");
+                !result.contains("ish joyi kerak");
     }
     private String cutText(String postUrl) {
         Document doc = Jsoup.parse(postUrl);

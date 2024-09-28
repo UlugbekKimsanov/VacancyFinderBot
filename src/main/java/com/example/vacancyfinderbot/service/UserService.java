@@ -38,7 +38,6 @@ public class UserService {
         channel.setUserEntity(user);
         channel.setDefResponse(defResponse);
         channelRepository.save(channel);
-
     }
     public void updateChannel(Channel channel){
         channelRepository.save(channel);
