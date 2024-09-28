@@ -4,9 +4,9 @@ bot:
 
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/postgres
-    username: postgres
-    password: 1
+    url: jdbc:postgresql://db-postgresql-fra1-89416-do-user-17454160-0.f.db.ondigitalocean.com:25060/defaultdb
+    username: doadmin
+    password: AVNS_qQ-icD5SFlKwQw6Q9B6
     driver-class-name: org.postgresql.Driver
   jpa:
     properties:
