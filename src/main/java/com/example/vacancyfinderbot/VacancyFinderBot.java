@@ -29,6 +29,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.regex.Pattern;
 
 @Component
 @EnableScheduling
@@ -246,13 +247,22 @@ public class VacancyFinderBot extends TelegramLongPollingBot {
             response.append(inputLine);
         }
         in.close();
+
         String text = cutText(response.toString());
         String result = (text != null) ? text.toLowerCase() : null;
         System.out.println("result = " + result);
-        return result != null && (result.contains(user.getKalitSoz().toLowerCase() + ",") || result.contains(user.getKalitSoz().toLowerCase()+" ")) &&
-                !result.contains("resume") && !result.contains("rezyume") &&
+
+        String keyword = user.getKalitSoz().toLowerCase();
+        String pattern = Pattern.quote(keyword) + "(?=[^a-zA-Z])";
+
+        return result != null && (
+                result.matches(".*" + pattern + ".*")
+        ) &&
+                !result.contains("resume") &&
+                !result.contains("rezyume") &&
                 !result.contains("ish joyi kerak");
     }
+
     private String cutText(String postUrl) {
         Document doc = Jsoup.parse(postUrl);
         Elements metaTags = doc.select("meta[property=og:description]");
